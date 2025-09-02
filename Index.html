@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>INCO — Web3 Privacy Quiz</title>
+  <meta name="description" content="A stylish 30-question quiz about INCO and Web3 privacy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo">
+        <!-- Simple inline mark to avoid extra files -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0"/><stop offset="1"/></linearGradient></defs>
+          <path d="M12 2l8 4.6v10.8L12 22l-8-4.6V6.6L12 2z" />
+          <circle cx="12" cy="12" r="3.4"></circle>
+        </svg>
+      </div>
+      <h1>INCO Quiz</h1>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="ghost">🌙</button>
+      <a class="ghost" href="https://vercel.com/new" target="_blank" rel="noopener">Deploy</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Start Screen -->
+    <section id="startScreen" class="card visible">
+      <h2>Test your INCO & Web3 privacy knowledge</h2>
+      <p>30 multiple-choice questions. You’ll see your score at the end.</p>
+      <form id="startForm" class="start-form" onsubmit="return false;">
+        <label class="input">
+          <span>Display name (optional)</span>
+          <input id="playerName" type="text" maxlength="24" placeholder="e.g., anon_builder" />
+        </label>
+        <button id="startBtn" class="primary">Start Quiz</button>
+      </form>
+      <p class="tiny">Questions provided by you. Answers are evaluated instantly at the end.</p>
+    </section>
+
+    <!-- Quiz Screen -->
+    <section id="quizScreen" class="card">
+      <div class="quiz-top">
+        <div class="progress">
+          <div class="progress__bar" id="progressBar"></div>
+        </div>
+        <div class="meta">
+          <span id="qCounter">Question 1/30</span>
+          <span id="scoreMini">Score: 0</span>
+        </div>
+      </div>
+
+      <div id="questionWrap" class="question-wrap">
+        <h3 id="questionText">Question text</h3>
+        <ul id="choices" class="choices"></ul>
+      </div>
+
+      <div class="quiz-actions">
+        <button id="nextBtn" class="primary" disabled>Next</button>
+      </div>
+    </section>
+
+    <!-- Result Screen -->
+    <section id="resultScreen" class="card">
+      <div class="result-hero">
+        <h2 id="resultTitle">Your Score</h2>
+        <div class="score-badge" id="finalScore">0/30</div>
+        <p id="resultNote">Nice work!</p>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-box">
+          <h4>Summary</h4>
+          <ul class="stats">
+            <li><span>Correct</span><strong id="statCorrect">0</strong></li>
+            <li><span>Incorrect</span><strong id="statWrong">0</strong></li>
+            <li><span>Accuracy</span><strong id="statAccuracy">0%</strong></li>
+            <li><span>Time</span><strong id="statTime">0s</strong></li>
+          </ul>
+        </div>
+        <div class="result-box">
+          <h4>Share</h4>
+          <div class="share">
+            <button id="shareBtn" class="ghost">Copy result</button>
+            <a id="tweetBtn" class="ghost" target="_blank" rel="noopener">Tweet</a>
+          </div>
+        </div>
+      </div>
+
+      <details class="review">
+        <summary>Review answers</summary>
+        <div id="reviewList" class="review-list"></div>
+      </details>
+
+      <div class="result-actions">
+        <button id="restartBtn" class="primary">Restart</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for INCO quiz • Deploy on Vercel • No trackers</span>
+  </footer>
+
+  <script>
+    // --------- Data (from your uploaded set) ----------
+    // Each item: { q: "question", options: ["a","b","c","d"], answer: index(0-3) }
+    const QUESTIONS = [
+      { q: "What is the main mission of IncoNetwork in web3?", options: [
+        "To build a centralized privacy system",
+        "To enable encrypted transactions on-chain through FHE",
+        "To create a private banking app",
+        "To replace bitcoin"
+      ], answer: 1 },
+      { q: "Which technology powers IncoNetwork’s ability to compute on encrypted data?", options: [
+        "Zero knowledge proofs",
+        "Multi party computation",
+        "Fully homomorphic encryption",
+        "Sidechains"
+      ], answer: 2 },
+      { q: "Why is privacy important in web3?", options: [
+        "To hide transaction history from all users",
+        "To protect sensitive financial data while keeping systems decentralized",
+        "To create a shadow banking ecosystem",
+        "To make blockchains illegal to track"
+      ], answer: 1 },
+      { q: "What does encrypted balances on IncoNetwork mean?", options: [
+        "Balances are hidden off-chain",
+        "Balances are visible but not modifiable",
+        "Balances are stored encrypted so amounts are private yet usable",
+        "Balances cannot be accessed at all"
+      ], answer: 2 },
+      { q: "What problem do programmable decryption rules solve?", options: [
+        "Allowing only specific parties to view decrypted information when needed",
+        "Making all data public by default",
+        "Preventing tokens from being transferred",
+        "Encrypting private keys"
+      ], answer: 0 },
+      { q: "What is a key benefit of encrypted allowances?", options: [
+        "Anyone can spend your tokens freely",
+        "Allowances can be set privately without exposing transaction amounts",
+        "They reduce gas fees",
+        "They make wallets less secure"
+      ], answer: 1 },
+      { q: "Confidential DeFi refers to:", options: [
+        "Traditional finance apps with extra passwords",
+        "DeFi protocols with transaction data hidden but still verifiable",
+        "Banking systems with no privacy features",
+        "DeFi protocols that don’t use smart contracts"
+      ], answer: 1 },
+      { q: "Which of these is NOT a feature of IncoNetwork?", options: [
+        "Encrypted balances",
+        "Confidential DeFi",
+        "Decentralized privacy infrastructure",
+        "Centralized identity tracking"
+      ], answer: 3 },
+      { q: "How does composability benefit IncoNetwork?", options: [
+        "Protocols can integrate privacy features without breaking interoperability",
+        "Applications run faster without encryption",
+        "It removes smart contract support",
+        "It only works on private blockchains"
+      ], answer: 0 },
+      { q: "Onchain privacy means:", options: [
+        "Privacy tools exist but only off-chain",
+        "Privacy is enforced directly at the blockchain protocol level",
+        "Privacy requires centralized custodians",
+        "Privacy is optional and external"
+      ], answer: 1 },
+      { q: "Why is a privacy layer important for web3?", options: [
+        "To hide all code",
+        "To add flexibility for developers building secure dapps",
+        "To prevent anyone from using the blockchain",
+        "To make networks slower"
+      ], answer: 1 },
+      { q: "IncoNetwork’s approach to private finance is different because:", options: [
+        "It centralizes trust",
+        "It encrypts transaction data while remaining composable with DeFi",
+        "It removes tokenization",
+        "It bans stablecoins"
+      ], answer: 1 },
+      { q: "Which of the following best describes confidential DeFi?", options: [
+        "Transparent balances for all users",
+        "Encrypted transactions with verifiable smart contracts",
+        "Transactions run off-chain entirely",
+        "A centralized DeFi protocol"
+      ], answer: 1 },
+      { q: "FHE allows IncoNetwork to:", options: [
+        "Perform computations directly on encrypted data without decrypting",
+        "Decrypt all blockchain data for faster transactions",
+        "Run only on private networks",
+        "Replace zk proofs entirely"
+      ], answer: 0 },
+      { q: "A decentralized economy benefits from onchain privacy because:", options: [
+        "It reduces market manipulation by hiding sensitive strategies",
+        "It makes every transaction visible instantly",
+        "It centralizes liquidity",
+        "It removes the need for validators"
+      ], answer: 0 },
+      { q: "Encrypted allowances help protect users by:", options: [
+        "Letting them approve spend without exposing the amount or details",
+        "Hiding the existence of tokens",
+        "Stopping gas fee payments",
+        "Locking wallets permanently"
+      ], answer: 0 },
+      { q: "Which is the core privacy innovation behind IncoNetwork?", options: [
+        "Sidechains",
+        "Layer 2 rollups",
+        "Fully homomorphic encryption",
+        "Multi sig wallets"
+      ], answer: 2 },
+      { q: "What does composability enable for developers in IncoNetwork?", options: [
+        "Building privacy features into existing DeFi apps without redesign",
+        "Only writing new standalone apps",
+        "Removing smart contracts from their stack",
+        "Avoiding security audits"
+      ], answer: 0 },
+      { q: "IncoNetwork adds value to DeFi because:", options: [
+        "It ensures balances and transactions remain confidential",
+        "It eliminates consensus mechanisms",
+        "It bans token swaps",
+        "It requires off-chain execution"
+      ], answer: 0 },
+      { q: "Which is an example of private finance enabled by IncoNetwork?", options: [
+        "A lending protocol where loan amounts are encrypted",
+        "A bank statement visible to all users",
+        "Public on-chain payroll data",
+        "A centralized DeFi exchange"
+      ], answer: 0 },
+      { q: "Which challenge does IncoNetwork solve in web3 privacy?", options: [
+        "Breaking interoperability between dapps",
+        "Adding privacy without sacrificing decentralization",
+        "Removing token standards",
+        "Forcing off-chain data storage"
+      ], answer: 1 },
+      { q: "Programmable decryption rules are important because:", options: [
+        "They define exactly who can see what data under what conditions",
+        "They remove privacy from smart contracts",
+        "They make blockchains slower",
+        "They ban composability"
+      ], answer: 0 },
+      { q: "Encrypted balances improve user trust by:", options: [
+        "Allowing private holdings without losing utility",
+        "Hiding tokens permanently",
+        "Centralizing visibility",
+        "Replacing wallets"
+      ], answer: 0 },
+      { q: "Which keyword best describes IncoNetwork’s privacy solution?", options: [
+        "Transparent",
+        "Confidential",
+        "Centralized",
+        "Non programmable"
+      ], answer: 1 },
+      { q: "What is the missing privacy layer in web3 that IncoNetwork provides?", options: [
+        "Transparent token transfers",
+        "FHE powered onchain privacy",
+        "Social logins",
+        "High gas fees"
+      ], answer: 1 },
+      { q: "Why does composability matter for confidential DeFi?", options: [
+        "It ensures apps can integrate privacy while staying interoperable",
+        "It forces isolation of private dapps",
+        "It eliminates smart contracts",
+        "It reduces adoption"
+      ], answer: 0 },
+      { q: "How do encrypted allowances change DeFi user experience?", options: [
+        "By enabling approvals that hide both amount and recipient details",
+        "By removing the ability to approve transactions",
+        "By centralizing spending permissions",
+        "By forcing all approvals on custodians"
+      ], answer: 0 },
+      { q: "Which of the following is true about IncoNetwork’s private finance vision?", options: [
+        "It allows secure confidential transactions without breaking DeFi composability",
+        "It bans composable apps",
+        "It hides all data off-chain",
+        "It centralizes privacy under one authority"
+      ], answer: 0 },
+      { q: "IncoNetwork’s confidential DeFi ecosystem ensures:", options: [
+        "Transactions are private yet auditable through cryptography",
+        "Transactions are always visible to everyone",
+        "Only custodians can process transactions",
+        "No financial privacy at all"
+      ], answer: 0 },
+      { q: "Why is FHE considered a breakthrough for blockchain privacy?", options: [
+        "It makes data usable while still encrypted",
+        "It removes all encryption layers",
+        "It slows down composability",
+        "It centralizes cryptography"
+      ], answer: 0 }
+    ];
+
+    // --------- State ----------
+    const el = (id) => document.getElementById(id);
+    const startScreen = el('startScreen');
+    const quizScreen = el('quizScreen');
+    const resultScreen = el('resultScreen');
+    const qCounter = el('qCounter');
+    const scoreMini = el('scoreMini');
+    const progressBar = el('progressBar');
+    const questionText = el('questionText');
+    const choicesEl = el('choices');
+    const nextBtn = el('nextBtn');
+    const startBtn = el('startBtn');
+    const restartBtn = el('restartBtn');
+    const playerNameInput = el('playerName');
+    const finalScore = el('finalScore');
+    const resultTitle = el('resultTitle');
+    const resultNote = el('resultNote');
+    const statCorrect = el('statCorrect');
+    const statWrong = el('statWrong');
+    const statAccuracy = el('statAccuracy');
+    const statTime = el('statTime');
+    const reviewList = el('reviewList');
+    const shareBtn = el('shareBtn');
+    const tweetBtn = el('tweetBtn');
+    const themeToggle = el('themeToggle');
+
+    let idx = 0;
+    let score = 0;
+    let selected = null;
+    let answers = []; // store chosen index per question
+    let startedAt = 0;
+
+    function show(elm) { elm.classList.add('visible'); }
+    function hide(elm) { elm.classList.remove('visible'); }
+
+    function startQuiz() {
+      idx = 0;
+      score = 0;
+      selected = null;
+      answers = new Array(QUESTIONS.length).fill(null);
+      startedAt = Date.now();
+
+      scoreMini.textContent = "Score: 0";
+      updateProgress();
+      renderQuestion();
+      hide(startScreen); hide(resultScreen);
+      show(quizScreen);
+    }
+
+    function updateProgress() {
+      qCounter.textContent = `Question ${idx + 1}/${QUESTIONS.length}`;
+      const pct = Math.round(((idx) / QUESTIONS.length) * 100);
+      progressBar.style.width = pct + "%";
+    }
+
+    function renderQuestion() {
+      nextBtn.disabled = true;
+      selected = null;
+
+      const { q, options } = QUESTIONS[idx];
+      questionText.textContent = q;
+      choicesEl.innerHTML = "";
+
+      options.forEach((opt, i) => {
+        const li = document.createElement('li');
+        li.className = "choice";
+        li.innerHTML = `
+          <button class="choice-btn" data-index="${i}">
+            <span class="bullet">${String.fromCharCode(65 + i)}</span>
+            <span class="text">${opt}</span>
+          </button>
+        `;
+        choicesEl.appendChild(li);
+      });
+
+      choicesEl.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.addEventListener('click', onChoose);
+      });
+    }
+
+    function onChoose(e) {
+      const btn = e.currentTarget;
+      const i = Number(btn.dataset.index);
+      selected = i;
+
+      choicesEl.querySelectorAll('.choice-btn').forEach(b => {
+        b.classList.remove('selected');
+      });
+      btn.classList.add('selected');
+      nextBtn.disabled = false;
+    }
+
+    function next() {
+      // record
+      if (selected !== null) {
+        answers[idx] = selected;
+        const correct = QUESTIONS[idx].answer;
+        if (selected === correct) score++;
+        scoreMini.textContent = `Score: ${score}`;
+      }
+
+      // continue or finish
+      if (idx < QUESTIONS.length - 1) {
+        idx++;
+        updateProgress();
+        renderQuestion();
+      } else {
+        finish();
+      }
+    }
+
+    function finish() {
+      const secs = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+      hide(quizScreen);
+      show(resultScreen);
+
+      const total = QUESTIONS.length;
+      finalScore.textContent = `${score}/${total}`;
+      const pct = Math.round((score / total) * 100);
+      statCorrect.textContent = score;
+      statWrong.textContent = total - score;
+      statAccuracy.textContent = `${pct}%`;
+      statTime.textContent = `${secs}s`;
+
+      let title = "Great job! 🎉";
+      if (pct === 100) title = "Perfect score! 🏆";
+      else if (pct >= 80) title = "Excellent! 🔒";
+      else if (pct >= 60) title = "Nice work! ✅";
+      else title = "Keep learning! 💡";
+      resultTitle.textContent = title;
+      resultNote.textContent = `Nice ${playerNameInput.value ? playerNameInput.value + "," : ""} you finished ${total} questions on INCO privacy.`;
+
+      // Review list
+      reviewList.innerHTML = "";
+      QUESTIONS.forEach((item, i) => {
+        const user = answers[i];
+        const correct = item.answer;
+        const correctText = item.options[correct];
+        const userText = user === null ? "No answer" : item.options[user];
+
+        const row = document.createElement('div');
+        row.className = "review-row " + (user === correct ? "good" : "bad");
+        row.innerHTML = `
+          <div class="rev-q"><span class="num">${i+1}.</span> ${item.q}</div>
+          <div class="rev-a">
+            <div><strong>Your answer:</strong> ${userText}</div>
+            <div><strong>Correct:</strong> ${correctText}</div>
+          </div>
+        `;
+        reviewList.appendChild(row);
+      });
+
+      // Share buttons
+      const name = playerNameInput.value?.trim() || "I";
+      const text = `${name} scored ${score}/${total} (${pct}%) on the INCO Web3 Privacy Quiz!`;
+      shareBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          shareBtn.textContent = "Copied!";
+          setTimeout(() => shareBtn.textContent = "Copy result", 1500);
+        } catch {
+          alert(text);
+        }
+      };
+      tweetBtn.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&hashtags=INCO,Web3,Privacy`;
+    }
+
+    function restart() {
+      playerNameInput.value = "";
+      hide(resultScreen);
+      show(startScreen);
+      progressBar.style.width = "0%";
+    }
+
+    // Theme toggle (light/dark)
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let dark = prefersDark;
+    function applyTheme() {
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      themeToggle.textContent = dark ? "☀️" : "🌙";
+    }
+    themeToggle.addEventListener('click', () => { dark = !dark; applyTheme(); });
+    applyTheme();
+
+    // Wire up
+    startBtn.addEventListener('click', startQuiz);
+    nextBtn.addEventListener('click', next);
+    restartBtn.addEventListener('click', restart);
+
+    // Keyboard accessibility
+    document.addEventListener('keydown', (e) => {
+      if (!quizScreen.classList.contains('visible')) return;
+      if (e.key >= '1' && e.key <= '4') {
+        const i = Number(e.key) - 1;
+        const btn = choicesEl.querySelectorAll('.choice-btn')[i];
+        if (btn) btn.click();
+      }
+      if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click();
+    });
+  </script>
+</body>
+</html>
